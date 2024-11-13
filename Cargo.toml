@@ -1,0 +1,23 @@
+[package]
+name = "animations"
+version = "0.2.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+panic-halt              = "0.2.0"
+cortex-m                = "0.7.6"
+cortex-m-rt             = "0.7.3"
+embedded-hal            = "0.2.7"
+adafruit-feather-rp2040 = "0.7.0"
+usbd-serial             = "0.1.1"
+usb-device              = "0.2.9"
+critical-section        = "1.1.2"
+embedded-time           = "0.12.1"
+ws2812-pio              = "0.7.0"
+smart-leds              = "0.3.0"
+fugit                   = "0.3.5"
+rp2040-hal              = "0.10.2"
+lis3dh                  = "0.4.2"
+accelerometer           = "0.12.0"
