@@ -37,10 +37,12 @@ impl Bright {
         }
     }
 
+    // display
     pub fn to_list(&self) -> [RGB8; NUM_PX] {
         self.strip
     }
 
+    // decide next frame in animation
     pub fn next(&mut self) {
         let brightness: u8 = if self.descending {
             200 - self.px_counter
@@ -54,24 +56,24 @@ impl Bright {
             (self.color.b as u16 * brightness as u16 / 200) as u8,
         ));
 
-        // Update px_counter to create a pulsing effect
+        // update px_counter to create a pulsing effect
         if self.descending {
             if self.px_counter <= 0 {
                 self.descending = false;
             } else {
-                self.px_counter -= 5; // Decrease at a fixed rate
+                self.px_counter -= 5; // decrease brightness
             }
         } else {
             if self.px_counter >= 200 {
                 self.descending = true;
             } else {
-                self.px_counter += 10; // Increase at a fixed rate
+                self.px_counter += 10; // increase brightness
             }
         }
     }
 }
 
-// sprial implementation
+// snake implementation
 pub struct Snake
 {
     strip: [RGB8; NUM_PX],
@@ -117,13 +119,18 @@ impl Snake {
             self.delta = true;
             self.col = (self.col + 1) % 8;
         }
-        if self.delta { self.row += 1 } else { self.row -= 1 };
+        if self.delta { 
+            self.row += 1;
+        } else { 
+            self.row -= 1;
+        }
         // update
         self.set();
     }
 
 }
 
+// spiral implementation
 pub struct Spiral {
     strip: [RGB8; NUM_PX],
     color: RGB8,
@@ -151,56 +158,51 @@ impl Spiral {
         self.strip
     }
 
+    // helper function
     fn xy_to_index(x: usize, y: usize) -> usize {
         y * WIDTH + x
     }
 
     pub fn next(&mut self) {
-        self.clear(); // Clear LEDs on each step
+        self.clear(); // clear previous LED on each step
         
-        // Calculate boundaries for the current layer
+        // calculate boundaries for the current layer
         let max_x = WIDTH - 1 - self.layer;
         let max_y = HEIGHT - 1 - self.layer;
         let min_x = self.layer;
         let min_y = self.layer;
 
-        // Check the bounds to make sure the layer is within the matrix
+        // check the bounds within 8x8
         if min_x > max_x || min_y > max_y {
-            // Reset to start again if we've spiraled inward completely
+            // reset to start if hit the middle
             self.index = 0;
             self.layer = 0;
             return;
         }
 
-        // Set LED for each segment of the current layer border
+        // set LED for each segment of the current layer border
         let pos = self.index % (2 * (max_x - min_x + max_y - min_y));
 
-        // Top row
+        // top row
         if pos < max_x - min_x + 1 {
             self.strip[Self::xy_to_index(min_x + pos, min_y)] = self.color;
         }
-        // Right column
+        // right column
         else if pos < max_x - min_x + 1 + max_y - min_y {
             self.strip[Self::xy_to_index(max_x, min_y + pos - (max_x - min_x + 1))] = self.color;
         }
-        // Bottom row
+        // bottom row
         else if pos < 2 * (max_x - min_x) + max_y - min_y + 1 {
-            self.strip[Self::xy_to_index(
-                max_x - (pos - (max_x - min_x + 1 + max_y - min_y)),
-                max_y,
-            )] = self.color;
+            self.strip[Self::xy_to_index(max_x - (pos - (max_x - min_x + 1 + max_y - min_y)), max_y)] = self.color;
         }
-        // Left column
+        // left column
         else {
-            self.strip[Self::xy_to_index(
-                min_x,
-                max_y - (pos - (2 * (max_x - min_x) + max_y - min_y + 1)),
-            )] = self.color;
+            self.strip[Self::xy_to_index(min_x, max_y - (pos - (2 * (max_x - min_x) + max_y - min_y + 1)))] = self.color;
         }
 
         self.index += 1;
 
-        // If we've completed a full loop around the border, go inward
+        // if full loop around the border move inward
         if self.index >= 2 * (max_x - min_x + max_y - min_y) {
             self.layer += 1;
             self.index = 0;
@@ -208,6 +210,7 @@ impl Spiral {
     }
 }
 
+// bouncy ball implementation
 pub struct Bouncy {
     strip: [RGB8; NUM_PX],
     x: usize,
@@ -218,7 +221,6 @@ pub struct Bouncy {
 }
 
 impl Bouncy {
-    // constructor fn
     pub fn new(color: RGB8) -> Bouncy {
         Self {
             strip: [RGB8::new(0, 0, 0); NUM_PX],
@@ -230,32 +232,30 @@ impl Bouncy {
         }
     }
 
-    // clear the LED matrix (set all LEDs to off)
     pub fn clear(&mut self) {
         for px in self.strip.iter_mut() {
             *px = RGB8::new(0, 0, 0);
         }
     }
+    
+    pub fn to_list(&self) -> [RGB8; NUM_PX] {
+        self.strip
+    }
 
-    // set a specific LED at (x, y) to the current color
     fn set_pixel(&mut self, x: usize, y: usize, color: RGB8) {
         let idx = y * WIDTH + x;
         self.strip[idx] = color;
     }
 
-    // update the animation to the next frame
     pub fn next(&mut self) {
-        // Clear the current position
         self.clear();
-
-        // Set the new position of the "ball"
         self.set_pixel(self.x, self.y, self.color);
 
-        // Update position based on direction
+        // update position based on direction
         self.x = (self.x as isize + self.dx) as usize;
         self.y = (self.y as isize + self.dy) as usize;
 
-        // Bounce off the walls by reversing direction when the ball hits the edge
+        // bounce off the walls by reversing direction
         if self.x == 0 || self.x == WIDTH - 1 {
             self.dx = -self.dx;
         }
@@ -263,10 +263,5 @@ impl Bouncy {
         if self.y == 0 || self.y == HEIGHT - 1 {
             self.dy = -self.dy;
         }
-    }
-
-    // return the LED strip as an array
-    pub fn to_list(&self) -> [RGB8; NUM_PX] {
-        self.strip
     }
 }
